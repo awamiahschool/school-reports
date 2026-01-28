@@ -369,7 +369,21 @@ input, select, textarea{
       .sigGrid{gap:10px}
       .sigLabel{font-size:14px}
       .sigValue{font-size:14px; padding:8px 8px; min-height:34px}
-    }
+    
+      /* --- Mobile print hardening: keep one page & no scale drift --- */
+      #reportView .page{
+        transform: none !important;
+        transform-origin: top center !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 190mm !important;
+      }
+      #reportView .page, #reportView .card, #reportView .grid, #reportView .row4, #reportView .signRow{
+        page-break-inside: avoid !important;
+        break-inside: avoid-page !important;
+      }
+
+}
 
     .evidenceRow{
       display:flex;
@@ -430,7 +444,7 @@ input, select, textarea{
     @media (max-width: 860px){ .signRow{ grid-template-columns: 1fr 1fr; } }
     @media (max-width: 520px){ .signRow{ grid-template-columns: 1fr; } }
 
-    @media (max-width: 520px){
+    @media screen and (max-width: 520px){
       .pageWrap{padding:12px}
       /* Mobile preview: scale A4 to fit screen */
       #reportView .page{
@@ -640,7 +654,7 @@ window.initDateUI = window.initDateUI || function(){ try{ /* handled by Date Syn
         <button class="btn primary" id="btnGenerate">توليد التقرير</button>
         <button class="btn" id="btnEdit" style="display:none">تعديل البيانات</button>
         <button class="btn" id="btnPrint" style="display:none">طباعة / حفظ PDF</button>
-        <button class="btn" id="btnWhatsApp" style="display:none">إرسال واتساب</button>
+        
         <button class="btn danger" id="btnReset">تفريغ</button>
       </div>
 
@@ -967,7 +981,7 @@ window.initDateUI = window.initDateUI || function(){ try{ /* handled by Date Syn
       (a,g)=>`تم تكليف الطلاب بمهمة منزلية بسيطة قابلة للقياس تدعم استمرار ممارسة «${g}».`,
       (a,g)=>`تم توظيف وسيلة تعلم (بطاقات/خرائط/منظم بصري) لترتيب الأفكار وتحقيق «${g}».`,
       (a,g)=>`تم تقديم مثالين متعاكسين ثم استخلاص الفروق لتوضيح «${g}» وتثبيت السلوك الصحيح.`,
-      (a,g)=>`تم ختام الحصة بملخص ثلاثي (تعلمت/طبّقت/سأحسّن) مرتبط بـ«${g}» وتوثيقه في السجل.`
+      (a,g)=>`تم ختام الحصة بملخص ثلاثي (تعلمت/طبّقت/سأحسّن) مرتبط بـ«${g}» وتوثيقه في السجل.`,
     ];
 
     (ACTIVITY_LIB||[]).forEach(act=>{
@@ -1109,7 +1123,7 @@ window.initDateUI = window.initDateUI || function(){ try{ /* handled by Date Syn
     const lab = document.createElement("label");
     lab.className="chip";
     lab.innerHTML = `<input type="checkbox" id="tool_${i}"/> <span>${t}</span>`;
-    toolsWrap.appendChild(lab);
+toolsWrap.appendChild(lab);
   });
 
   let evidenceFiles = [];
@@ -1131,40 +1145,10 @@ window.initDateUI = window.initDateUI || function(){ try{ /* handled by Date Syn
   const btnGenerate = $("btnGenerate");
   const btnEdit = $("btnEdit");
   const btnPrint = $("btnPrint");
-  const btnWhatsApp = $("btnWhatsApp");
+  const btnWhatsApp = null; // WhatsApp removed
   const btnReset = $("btnReset");
 
-  function buildWhatsAppMessage(){
-    const chosen = collectTools();
-    const toolsLine = chosen.length ? chosen.map(t=>"✓ "+t).join("، ") : "—";
-    const msg =
-`تقرير تنفيذ حصة انتظار
-الفصل الدراسي ${term} ١٤٤٧هـ
-
-اليوم/التاريخ: ${safeText($("f_date").value)}
-الحصة: ${safeText($("f_period").value)}
-الصف/الفصل: ${safeText($("f_class").value)}
-
-المادة الأساسية: ${safeText($("f_baseSubject").value)}
-المادة/النشاط المنفذ: ${safeText(getActivityText())}
-مكان التنفيذ: ${safeText($("f_place").value)}
-
-وسائل التنفيذ: ${toolsLine}
-
-الهدف العام:
-${safeText($("f_goal").value)}
-
-وصف ما تم إنجازه بالحصة:
-${safeText($("f_done").value)}
-
-ملاحظات/توصيات:
-${safeText($("f_notes").value)}
-
-المعلم: ${safeText($("f_teacher").value, "—")}
-`;
-    return msg;
-  }
-
+  /* buildWhatsAppMessage removed */
 
   function selectedText(id, fallback="—"){
     const el = document.getElementById(id);
@@ -1329,7 +1313,7 @@ const d = new Date(v+"T00:00:00");
     btnGenerate.style.display = isReport ? "none" : "inline-flex";
     btnEdit.style.display = isReport ? "inline-flex" : "none";
     btnPrint.style.display = isReport ? "inline-flex" : "none";
-    btnWhatsApp.style.display = isReport ? "inline-flex" : "none";
+    if(btnWhatsApp){ btnWhatsApp.style.display = isReport ? "inline-flex" : "none"; }
     stateBadge.textContent = isReport ? "وضع التقرير" : "وضع الإدخال";
   }
 
@@ -1423,18 +1407,7 @@ setTimeout(()=>window.scrollTo({top:0,behavior:"smooth"}), 50);
 
   window.addEventListener("beforeprint", applySinglePageFit);
 
-btnWhatsApp.addEventListener("click", ()=>{
-    // WhatsApp cannot attach PDF directly from a local HTML file.
-    // We therefore prepare the report for printing/saving as PDF, then open WhatsApp with a short message.
-    try{ setView('report'); }catch(e){}
-    setTimeout(()=>{
-      try{ window.print(); }catch(e){}
-      const text = "تم إعداد تقرير التنفيذ (PDF).\nالرجاء إرفاق ملف الـPDF بعد حفظه من الطباعة.";
-      const url = "https://wa.me/?text=" + encodeURIComponent(text);
-      window.open(url, "_blank");
-      alert("✅ تم فتح الطباعة لحفظ PDF.\nبعد حفظه اختر ملف الـPDF وأرفقه داخل واتساب.");
-    }, 50);
-  });
+/* WhatsApp click handler removed */
 
 btnReset.addEventListener("click", ()=>{
     if(!confirm("هل تريد تفريغ جميع البيانات؟")) return;
