@@ -378,9 +378,19 @@ input, select, textarea{
         width: 100% !important;
         max-width: 190mm !important;
       }
-      #reportView .page, #reportView .card, #reportView .grid, #reportView .row4, #reportView .signRow{
+      #reportView .row4, #reportView .signRow, #reportView .sigGrid {
         page-break-inside: avoid !important;
         break-inside: avoid-page !important;
+      }
+
+
+      /* Force A4 sizing & margins for mobile print engines */
+      @page { size: A4; margin: 8mm; }
+
+      /* Slight downscale to prevent header spilling onto page 1 alone on mobile */
+      #reportView .page{
+        zoom: 0.92;
+        box-sizing: border-box !important;
       }
 
 }
