@@ -369,55 +369,38 @@ input, select, textarea{
       .sigGrid{gap:10px}
       .sigLabel{font-size:14px}
       .sigValue{font-size:14px; padding:8px 8px; min-height:34px}
-    
-      
+
+      /* --- Print: keep layout stable across mobile/desktop --- */
+      @page { size: A4; margin: 8mm; }
+
+      body{ background:#fff !important; }
+
+      /* Make the A4 page flow (avoid clipping on mobile print engines) */
       #reportView .page{
-        transform: none !important;
-        transform-origin: top center !important;
-        margin: 0 auto !important;
         width: 100% !important;
         max-width: 190mm !important;
-      }
-      #reportView .page, #reportView .card, #reportView .grid, #reportView .row4, #reportView .signRow{
-        page-break-inside: avoid !important;
-        break-inside: avoid-page !important;
-      }
-
-
-      /* --- Mobile print (Android/iOS) fix: prevent header-only page --- */
-      @page { size: A4; margin: 7mm; }
-
-      /* Ensure content is NOT clipped (some mobile print engines clip fixed-height pages) */
-      #reportView, #reportView *{
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-      #reportView .page{
-        transform: none !important;
-        zoom: 1 !important;
-        width: 100% !important;
-        max-width: 190mm !important;
-        height: auto !important;
         min-height: 0 !important;
+        height: auto !important;
         overflow: visible !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        transform: none !important;
         margin: 0 auto !important;
-        box-sizing: border-box !important;
       }
-      /* Let internal sections flow normally in print */
       #reportView .page *{
         overflow: visible !important;
         max-height: none !important;
       }
 
-      /* Gentle downscale on small screens during print */
-      @media print and (max-width: 520px){
-        #reportView .page{
-          transform: scale(0.92) !important;
-          transform-origin: top center !important;
-        }
+      /* Prevent ugly splits only for signature boxes */
+      .sigGrid, .signRow{
+        break-inside: avoid-page !important;
+        page-break-inside: avoid !important;
       }
 
 }
+
 
     .evidenceRow{
       display:flex;
