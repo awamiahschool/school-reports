@@ -399,34 +399,6 @@ input, select, textarea{
         page-break-inside: avoid !important;
       }
 
-
-
-      /* Signature one-page fit (mobile print): keep signatures on page 1 */
-      .sigGrid{
-        margin-top:6px !important;
-        padding-top:6px !important;
-        gap:8px !important;
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-        break-before: avoid-page !important;
-        page-break-before: avoid !important;
-      }
-      .sigCard{
-        padding:8px 10px !important;
-        border-radius:16px !important;
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-      }
-      .sigLabel{
-        font-size:13.5px !important;
-        margin-bottom:6px !important;
-      }
-      .sigValue{
-        font-size:13.5px !important;
-        padding:7px 7px !important;
-        min-height:30px !important;
-      }
-
 }
 
 
@@ -617,6 +589,17 @@ input, select, textarea{
   font-size:12.5px !important;
   padding-top:8px !important;
   white-space:nowrap !important;
+}
+
+
+/* Print-fit wrapper (used to keep all content on first page in mobile print) */
+.printFit{ width:100%; }
+@media print{
+  /* Let content flow and be scaled by JS if needed */
+  .printFit{ transform:none; transform-origin: top center; }
+  #reportView .page{ overflow: visible !important; height:auto !important; min-height:0 !important; }
+  /* keep signature card together */
+  #reportView .sigGrid, #reportView .row4, #reportView .signRow{ break-inside: avoid-page !important; page-break-inside: avoid !important; }
 }
 
 </style>
@@ -1784,6 +1767,102 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   }catch(e){}
 });
+
+
+/* --- Mobile print architect fix: auto-fit whole report into first page --- */
+(function(){
+  function ensurePrintFitWrapper(){
+    try{
+      var page = document.getElementById('page');
+      if(!page) return null;
+      var wrap = document.getElementById('printFit');
+      if(!wrap){
+        wrap = document.createElement('div');
+        wrap.id = 'printFit';
+        wrap.className = 'printFit';
+        // move all children into wrapper
+        while(page.firstChild){
+          wrap.appendChild(page.firstChild);
+        }
+        page.appendChild(wrap);
+      }
+      return wrap;
+    }catch(e){ return null; }
+  }
+
+  function pxPerMM(){
+    var probe = document.getElementById('mmProbe');
+    if(!probe){
+      probe = document.createElement('div');
+      probe.id = 'mmProbe';
+      probe.style.position='absolute';
+      probe.style.left='-9999px';
+      probe.style.top='-9999px';
+      probe.style.width='100mm';
+      probe.style.height='10mm';
+      document.body.appendChild(probe);
+    }
+    var w = probe.getBoundingClientRect().width || 0;
+    return w ? (w/100) : 3.78; // fallback
+  }
+
+  function applyPrintFit(){
+    var wrap = ensurePrintFitWrapper();
+    if(!wrap) return;
+
+    // Reset
+    wrap.style.transform = 'none';
+    wrap.style.webkitTransform = 'none';
+
+    // Compute printable height in px (A4 minus margins). Use mm->px based on actual device.
+    var ppm = pxPerMM();
+    var pageH = (297 - 14) * ppm; // assume ~7mm top/bottom margins
+    // Sometimes mobile print uses different margins; keep a little safety
+    pageH *= 0.985;
+
+    // Measure content height
+    // Use scrollHeight after ensuring it's visible
+    var h = wrap.scrollHeight || wrap.getBoundingClientRect().height || 0;
+    if(!h) return;
+
+    // If it overflows, scale down slightly to keep all on first page
+    if(h > pageH){
+      var s = pageH / h;
+      // Clamp: never scale below 0.80 to avoid unreadable; if still too tall, let it paginate naturally.
+      if(s >= 0.80 && s < 1){
+        wrap.style.transformOrigin = 'top center';
+        wrap.style.transform = 'scale(' + (s.toFixed(4)) + ')';
+        wrap.style.webkitTransformOrigin = 'top center';
+        wrap.style.webkitTransform = 'scale(' + (s.toFixed(4)) + ')';
+      }
+    }
+  }
+
+  function clearPrintFit(){
+    var wrap = document.getElementById('printFit');
+    if(wrap){
+      wrap.style.transform = 'none';
+      wrap.style.webkitTransform = 'none';
+    }
+  }
+
+  // Hook both APIs (mobile browsers differ)
+  window.addEventListener('beforeprint', applyPrintFit);
+  window.addEventListener('afterprint', clearPrintFit);
+
+  // Some mobile browsers use matchMedia('print')
+  if(window.matchMedia){
+    try{
+      var mql = window.matchMedia('print');
+      if(mql && mql.addEventListener){
+        mql.addEventListener('change', function(e){ if(e.matches) applyPrintFit(); else clearPrintFit(); });
+      }else if(mql && mql.addListener){
+        mql.addListener(function(e){ if(e.matches) applyPrintFit(); else clearPrintFit(); });
+      }
+    }catch(e){}
+  }
+})();
+
 </script>
 
 </body>
