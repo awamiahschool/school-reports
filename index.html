@@ -399,6 +399,34 @@ input, select, textarea{
         page-break-inside: avoid !important;
       }
 
+
+
+      /* Signature one-page fit (mobile print): keep signatures on page 1 */
+      .sigGrid{
+        margin-top:6px !important;
+        padding-top:6px !important;
+        gap:8px !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        break-before: avoid-page !important;
+        page-break-before: avoid !important;
+      }
+      .sigCard{
+        padding:8px 10px !important;
+        border-radius:16px !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      .sigLabel{
+        font-size:13.5px !important;
+        margin-bottom:6px !important;
+      }
+      .sigValue{
+        font-size:13.5px !important;
+        padding:7px 7px !important;
+        min-height:30px !important;
+      }
+
 }
 
 
